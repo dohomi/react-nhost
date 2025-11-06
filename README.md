@@ -1,6 +1,6 @@
-# react-components-starter
+# react-nhost
 
-A starter for creating a React component library.
+To use Nhost `@nhost/nhost-js` with React this library provides a `NhostProvider` and some additional hooks.
 
 ## Development
 
