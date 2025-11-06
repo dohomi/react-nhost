@@ -13,7 +13,8 @@
   },
   "author": "Dominic Garms <djgarms@gmail.com>",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "type": "module",
   "main": "./dist/index.js",
