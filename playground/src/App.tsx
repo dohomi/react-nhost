@@ -1,9 +1,11 @@
-import { MyButton } from '../../src'
+import { NhostProvider } from '../../src'
 
 export function App() {
   return (
     <>
-      <MyButton type="primary" />
+      <NhostProvider nhostClient={}>
+        <h1>This is a test app.</h1>
+      </NhostProvider>
     </>
   )
 }
