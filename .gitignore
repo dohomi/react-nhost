@@ -4,5 +4,5 @@ dist
 .DS_Store
 .yarn
 .pnp.cjs
-.pnp.cjs
+.pnp.loader.mjs
 .idea
