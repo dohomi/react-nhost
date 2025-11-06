@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "description": "Nhost React components and hooks for SDK >= v4",
   "license": "MIT",
-  "homepage": "https://github.com/author/library#readme",
+  "homepage": "https://www.npmjs.com/package/react-nhost",
   "bugs": {
-    "url": "https://github.com/author/library/issues"
+    "url": "https://github.com/dohomi/react-nhost/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/author/library.git"
+    "url": "git+https://github.com/dohomi/react-nhost.git"
   },
   "author": "Dominic Garms <djgarms@gmail.com>",
   "files": [
