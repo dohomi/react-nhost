@@ -1,6 +1,19 @@
+<div align="center">
+
 # react-nhost
 
-To use Nhost `@nhost/nhost-js` with React this library provides a `NhostProvider` and some additional hooks. The main reason for this library is the deprecation of `@nhost/nhost-react`.
+[![npm version](https://img.shields.io/npm/v/react-nhost.svg)](https://www.npmjs.com/package/react-nhost)
+[![npm downloads](https://img.shields.io/npm/dm/react-nhost.svg)](https://www.npmjs.com/package/react-nhost)
+[![npm bundle size](https://img.shields.io/bundlephobia/minzip/react-nhost)](https://www.npmjs.com/package/react-nhost)
+[![License](https://img.shields.io/npm/l/react-nhost.svg)](https://github.com/dohomi/react-nhost/blob/main/LICENSE)
+
+A React wrapper for the [Nhost JavaScript SDK](https://docs.nhost.io/reference/javascript/nhost-js/main) (`@nhost/nhost-js`). This library provides React hooks that are a **1:1 binding** of all underlying Nhost SDK functions, making it easy to use Nhost in your React applications.
+
+</div>
+
+The hooks in this library directly map to the Nhost SDK methods. For detailed API documentation, parameter types, and return values, refer to the **[Nhost SDK documentation](https://docs.nhost.io/reference/javascript/nhost-js/main)** - it shows the exact API for each function used by the hooks in this library.
+
+For TypeScript users, all function names, parameters, and return types are **fully typed** with complete type safety and autocomplete support.
 
 ## Installation
 
@@ -22,11 +35,25 @@ Optional dependencies for elevated permissions:
 npm install @simplewebauthn/browser
 ```
 
+## Overview
+
+This library provides a `NhostProvider` component and several React hooks to work with Nhost in your React application:
+
+### Provider
+- **⚛️ [`NhostProvider`](#nhostprovider)** - Wraps your application and provides the Nhost context to all hooks
+
+### Hooks
+- **👤 [`useNhost`](#usenhost)** - Base hook to access authentication state, user, session, and the Nhost client instance
+- **🔒 [`useNhostAuth`](#usenhostauth)** - Type-safe wrapper for authentication methods (sign in, sign up, reset password, etc.) - [Nhost SDK Auth Documentation](https://docs.nhost.io/reference/javascript/nhost-js/auth)
+- **🔐 [`useNhostAuthElevated`](#usenhostauthelevated)** - For authentication methods requiring elevated permissions (change password, change email, etc.) - [Nhost SDK Auth Documentation](https://docs.nhost.io/reference/javascript/nhost-js/auth)
+- **📦 [`useNhostStorage`](#usenhoststorage)** - Type-safe wrapper for storage operations (upload files, delete, get public URL, etc.) - [Nhost SDK Storage Documentation](https://docs.nhost.io/reference/javascript/nhost-js/storage)
+- **🛡️ [`useNhostSecurity`](#usenhostsecurity)** - Manages WebAuthn security keys and elevated permissions
+
 ## Setup
 
 You need for all hooks to work the `NhostProvider`. Most likely this will wrap your entire app. If you use ReactRouter, Tanstack Router or any other routing library the `NhostProvider` will be one level up.
 
-### NhostProvider 
+### ⚛️ `NhostProvider` 
 
 ```tsx App.tsx
 import { NhostProvider } from "react-nhost"
@@ -46,11 +73,10 @@ export function App() {
 }
 ```
 
-Now you can use the hooks anywhere in your application to handle authentication, storage, and security operations.
 
 ## Hooks
 
-### useNhost
+### 👤 `useNhost`
 
 The `useNhost` hook provides access to the Nhost context. This is the base hook that gives you access to the authentication state and the Nhost client instance.
 
@@ -110,9 +136,11 @@ export function AuthGuard({ children }: PropsWithChildren) {
 }
 ```
 
-### useNhostAuth
+### 🔒 `useNhostAuth`
 
 This hook creates a type-safe wrapper for any function callable inside the `nhost.auth` directive. It provides loading states, error handling, and success callbacks.
+
+For the complete API reference, see the **[Nhost SDK Auth Documentation](https://docs.nhost.io/reference/javascript/nhost-js/auth)**.
 
 #### API
 
@@ -192,9 +220,11 @@ export function SignInComponent() {
 }
 ```
 
-### useNhostAuthElevated
+### 🔐 `useNhostAuthElevated`
 
 This hook is similar to `useNhostAuth` but is specifically designed for authentication methods that require elevated permissions. It automatically handles elevation if required before executing the authentication method. This is useful for sensitive operations like `changeUserPassword`, `changeUserEmail`, and other methods that require elevated permissions.
+
+For the complete API reference, see the **[Nhost SDK Auth Documentation](https://docs.nhost.io/reference/javascript/nhost-js/auth)**.
 
 #### API
 
@@ -264,9 +294,11 @@ export function ChangePasswordComponent() {
 }
 ```
 
-### useNhostStorage
+### 📦 `useNhostStorage`
 
 This hook creates a type-safe wrapper for any function callable inside the `nhost.storage` directive. It provides loading states, error handling, and success callbacks for storage operations.
+
+For the complete API reference, see the **[Nhost SDK Storage Documentation](https://docs.nhost.io/reference/javascript/nhost-js/storage)**.
 
 #### API
 
@@ -317,7 +349,7 @@ export function FileUploadComponent() {
 }
 ```
 
-### useNhostSecurity
+### 🛡️ `useNhostSecurity`
 
 This hook provides functionality for managing WebAuthn security keys and elevated permissions. It automatically fetches security keys for the current user and provides methods to check and elevate permissions.
 
