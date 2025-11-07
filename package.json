@@ -12,6 +12,10 @@
     "url": "git+https://github.com/dohomi/react-nhost.git"
   },
   "author": "Dominic Garms <djgarms@gmail.com>",
+  "funding": {
+    "type": "buymeacoffee",
+    "url": "https://buymeacoffee.com/dohomi"
+  },
   "files": [
     "dist",
     "README.md"

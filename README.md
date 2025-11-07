@@ -437,3 +437,11 @@ All hooks are fully type-safe and provide TypeScript autocomplete for:
 - Error types from the Nhost SDK
 
 This ensures that you catch errors at compile time rather than runtime.
+
+## Support
+
+Enjoying `react-nhost`? If this library has made your life easier (or at least your React apps more awesome), consider buying me a coffee! ☕
+
+Your support helps keep this project maintained, updated, and caffeinated! 🙏
+
+**[☕ Buy me a coffee](https://buymeacoffee.com/dohomi)**
