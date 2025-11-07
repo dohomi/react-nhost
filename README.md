@@ -192,6 +192,78 @@ export function SignInComponent() {
 }
 ```
 
+### useNhostAuthElevated
+
+This hook is similar to `useNhostAuth` but is specifically designed for authentication methods that require elevated permissions. It automatically handles elevation if required before executing the authentication method. This is useful for sensitive operations like `changeUserPassword`, `changeUserEmail`, and other methods that require elevated permissions.
+
+#### API
+
+**Parameters:**
+- `fn`: A string specifying which authentication method to call that requires elevated permissions (e.g., `"changeUserPassword"`, `"changeUserEmail"`, etc.)
+- `onSuccess`: Optional callback function that runs when the operation succeeds. Receives:
+  - `nhost`: The Nhost client instance
+  - `data`: The response data from the authentication method
+  - `params`: The parameters that were passed to the method
+- `onError`: Optional callback function that runs when the operation fails. Receives:
+  - `nhost`: The Nhost client instance
+  - `error`: The error object with details about what went wrong
+  - `params`: The parameters that were passed to the method
+
+**Returns:**
+- `callAsync`: Function to call the authentication method with the required parameters (automatically handles elevation if needed)
+- `isLoading`: Boolean indicating if the operation is in progress
+- `isSuccess`: Boolean indicating if the last operation succeeded
+- `error`: Error object (or `null`) containing details if the operation failed
+
+#### Example
+
+```tsx
+import { useNhostAuthElevated } from "react-nhost"
+import { useState } from "react"
+
+export function ChangePasswordComponent() {
+  const [newPassword, setNewPassword] = useState("")
+  
+  const { callAsync, isLoading, isSuccess, error } = useNhostAuthElevated({
+    fn: "changeUserPassword",
+    onSuccess: ({ nhost, data, params }) => {
+      console.log("Password changed successfully:", data)
+      // Password was changed
+      setNewPassword("")
+    },
+    onError: ({ nhost, error, params }) => {
+      console.error("Password change failed:", error.message)
+      // Access nhost client if needed
+      // params contains the password that was attempted
+    }
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await callAsync({
+      newPassword
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="password"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        placeholder="New Password"
+        disabled={isLoading}
+      />
+      <button type="submit" disabled={isLoading || !newPassword}>
+        {isLoading ? "Changing password..." : "Change Password"}
+      </button>
+      {error && <div className="error">{error.message}</div>}
+      {isSuccess && <div className="success">Password changed successfully!</div>}
+    </form>
+  )
+}
+```
+
 ### useNhostStorage
 
 This hook creates a type-safe wrapper for any function callable inside the `nhost.storage` directive. It provides loading states, error handling, and success callbacks for storage operations.
@@ -327,7 +399,7 @@ export function SecurityKeysComponent() {
 
 All hooks are fully type-safe and provide TypeScript autocomplete for:
 
-- Available functions in `useNhostAuth` and `useNhostStorage`
+- Available functions in `useNhostAuth`, `useNhostAuthElevated`, and `useNhostStorage`
 - Function parameters based on the selected function
 - Return types based on the selected function
 - Error types from the Nhost SDK
