@@ -1,5 +1,5 @@
 import type { ErrorResponse } from "@nhost/nhost-js/auth";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { NhostClient } from "@nhost/nhost-js";
 import { FetchError } from "@nhost/nhost-js/fetch";
 import { useNhost } from "./useNhost";
@@ -49,6 +49,18 @@ export function useNhostAuth<K extends AuthFnName>({
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<FetchError<ErrorResponse> | null>(null);
 
+  // Auto-stabilize callbacks ---
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
   const callAsync = useCallback(
       async (
           params: ParamsOf<K>
@@ -61,19 +73,23 @@ export function useNhostAuth<K extends AuthFnName>({
           const fnToCall = nhost.auth[fn] as AuthMethods[K];
           const result = await fnToCall(params);
 
-          if (onSuccess) await onSuccess({nhost, data: result, params});
+          if (onSuccessRef.current) {
+            await onSuccessRef.current({ nhost, data: result, params });
+          }
           setIsSuccess(true);
           return result;
         } catch (e) {
           const fetchError = e as FetchError<ErrorResponse>;
           setError(fetchError);
-          if (onError) await onError({nhost, error: fetchError, params});
+          if (onErrorRef.current) {
+            await onErrorRef.current({ nhost, error: fetchError, params });
+          }
           return fetchError;
         } finally {
           setIsLoading(false);
         }
       },
-      [nhost, fn, onSuccess, onError]
+      [nhost, fn]
   );
 
   return {callAsync, isLoading, isSuccess, error};

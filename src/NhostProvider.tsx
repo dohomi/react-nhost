@@ -113,41 +113,36 @@ export function NhostProvider({children, nhostClient}: NhostProviderProps) {
     };
   }, [reloadSession, nhostClient]);
 
-  const signOut = useCallback(async () => {
-        if (!session?.refreshToken) return;
-        setIsLoading(true);
-        await nhostClient.auth.signOut({
-          refreshToken: session.refreshToken,
-        });
-        setUser(null);
-        setSession(null);
-        setIsAuthenticated(false);
-        setIsLoading(false);
-      },
-      [nhostClient, session]
-  );
 
-
-  const refreshSession = useCallback(
-      async () => {
-        const newSession = await nhostClient.refreshSession(0);
-        setUser(newSession?.user || null);
-        setSession(newSession);
-        setIsAuthenticated(!!newSession);
-      },
-      [nhostClient]
-  );
-
-  const authContext = useMemo(() => ({
-    user,
-    session,
-    isAuthenticated,
-    isLoading,
-    nhost: nhostClient,
-    userId: user?.id,
-    signOut,
-    refreshSession
-  }), [user, isLoading, nhostClient, refreshSession, session, isAuthenticated, signOut])
+  const authContext = useMemo(() => {
+    const signOut = async () => {
+      if (!session?.refreshToken) return;
+      setIsLoading(true);
+      await nhostClient.auth.signOut({
+        refreshToken: session.refreshToken,
+      });
+      setUser(null);
+      setSession(null);
+      setIsAuthenticated(false);
+      setIsLoading(false);
+    }
+    const refreshSession = async () => {
+      const newSession = await nhostClient.refreshSession(0);
+      setUser(newSession?.user || null);
+      setSession(newSession);
+      setIsAuthenticated(!!newSession);
+    }
+    return {
+      user,
+      session,
+      isAuthenticated,
+      isLoading,
+      nhost: nhostClient,
+      userId: user?.id,
+      signOut,
+      refreshSession
+    }
+  }, [user, isLoading, nhostClient,  session, isAuthenticated])
 
   return <NhostContext.Provider value={authContext}>{children}</NhostContext.Provider>;
 }

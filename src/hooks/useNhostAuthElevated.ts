@@ -1,7 +1,7 @@
 import type { NhostClient } from "@nhost/nhost-js";
 import type { ErrorResponse } from "@nhost/nhost-js/auth";
 import { FetchError } from "@nhost/nhost-js/fetch";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNhost } from "./useNhost";
 import { useNhostSecurity } from "./useNhostSecurity";
 
@@ -50,6 +50,17 @@ export function useNhostAuthElevated<K extends AuthFnName>({
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<FetchError<ErrorResponse> | null>(null);
   const { requiresElevation, checkElevation } = useNhostSecurity();
+  // Auto-stabilize callbacks ---
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   const callAsync = useCallback(
       async (
@@ -65,19 +76,24 @@ export function useNhostAuthElevated<K extends AuthFnName>({
           }
           const fnToCall = nhost.auth[fn] as AuthMethods[K];
           const result = await fnToCall(params);
-          if (onSuccess) await onSuccess({nhost, data: result, params});
+          // Always call the latest callback
+          if (onSuccessRef.current) {
+            await onSuccessRef.current({ nhost, data: result, params });
+          }
           setIsSuccess(true);
           return result;
         } catch (e) {
           const fetchError = e as FetchError<ErrorResponse>;
           setError(fetchError);
-          if (onError) await onError({nhost, error: fetchError, params});
+          if (onErrorRef.current) {
+            await onErrorRef.current({ nhost, error: fetchError, params });
+          }
           return fetchError;
         } finally {
           setIsLoading(false);
         }
       },
-      [nhost, fn, onSuccess, onError]
+      [nhost, fn, checkElevation, requiresElevation]
   );
 
   return {callAsync, isLoading, isSuccess, error};

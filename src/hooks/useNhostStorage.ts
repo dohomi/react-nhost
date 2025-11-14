@@ -1,7 +1,7 @@
 import type { NhostClient } from "@nhost/nhost-js";
 import type { ErrorResponse } from "@nhost/nhost-js/storage";
 import { FetchError } from "@nhost/nhost-js/fetch";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNhost } from "./useNhost";
 
 type StorageMethods = {
@@ -49,6 +49,18 @@ export function useNhostStorage<K extends StorageFnName>({
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<FetchError<ErrorResponse> | null>(null);
 
+  // Auto-stabilize callbacks ---
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
   const callAsync = useCallback(
       async (
           params: ParamsOf<K>
@@ -61,19 +73,23 @@ export function useNhostStorage<K extends StorageFnName>({
           const fnToCall = nhost.storage[fn] as StorageMethods[K];
           const result = await fnToCall(params);
 
-          if (onSuccess) await onSuccess({ nhost, data: result, params });
+          if (onSuccessRef.current) {
+            await onSuccessRef.current({ nhost, data: result, params });
+          }
           setIsSuccess(true);
           return result;
         } catch (e) {
           const fetchError = e as FetchError<ErrorResponse>;
           setError(fetchError);
-          if (onError) await onError({ nhost, error: fetchError, params });
+          if (onErrorRef.current) {
+            await onErrorRef.current({ nhost, error: fetchError, params });
+          }
           return fetchError;
         } finally {
           setIsLoading(false);
         }
       },
-      [nhost, fn, onSuccess, onError]
+      [nhost, fn]
   );
 
   return { callAsync, isLoading, isSuccess, error };
