@@ -1,6 +1,6 @@
 {
   "name": "react-nhost",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Nhost React components and hooks for SDK >= v4",
   "license": "MIT",
   "homepage": "https://www.npmjs.com/package/react-nhost",
