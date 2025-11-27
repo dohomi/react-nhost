@@ -6,3 +6,4 @@ dist
 .pnp.cjs
 .pnp.loader.mjs
 .idea
+.env
