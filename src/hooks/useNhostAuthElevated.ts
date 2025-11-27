@@ -1,3 +1,5 @@
+import { ErrorResponse } from "@nhost/nhost-js/auth";
+import { FetchError } from "@nhost/nhost-js/fetch";
 import { useCallback } from "react";
 import type { AuthFnName, AuthMethods, ParamsOfAuth, UseAuthHandlerOptions } from "./typeHelper";
 import { useNhostSecurity } from "./useNhostSecurity";
@@ -25,5 +27,5 @@ export function useNhostAuthElevated<K extends AuthFnName>({
     [callAsync, nhost, fn, requiresElevation, checkElevation]
   );
 
-  return {callAsync: caller, isLoading, isSuccess, error};
+  return {callAsync: caller, isLoading, isSuccess, error: error as FetchError<ErrorResponse> | null};
 }

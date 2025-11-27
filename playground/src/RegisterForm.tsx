@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNhostAuth } from "../../src";
 
 export function RegisterForm() {
-  const {callAsync} = useNhostAuth({
+  const {callAsync, error} = useNhostAuth({
     fn: "signUpEmailPassword",
     onSuccess: async({params, nhost, data}) => {
       console.log(params.email)
@@ -12,6 +12,7 @@ export function RegisterForm() {
       console.log(error.body.error )
     }
   })
+  console.log(error)
   const [form, setForm] = useState({
     email: "",
     password: "",

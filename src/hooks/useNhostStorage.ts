@@ -55,6 +55,6 @@ export function useNhostStorage<K extends StorageFnName>({
     callAsync: caller,
     isLoading,
     isSuccess,
-    error,
+    error: error as FetchError<ErrorResponse> | null,
   };
 }
