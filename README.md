@@ -1,5 +1,3 @@
-<div align="center">
-
 # react-nhost
 
 [![npm version](https://img.shields.io/npm/v/react-nhost.svg)](https://www.npmjs.com/package/react-nhost)
@@ -8,8 +6,6 @@
 [![License](https://img.shields.io/npm/l/react-nhost.svg)](https://github.com/dohomi/react-nhost/blob/main/LICENSE)
 
 A React wrapper for the [Nhost JavaScript SDK](https://docs.nhost.io/reference/javascript/nhost-js/main) (`@nhost/nhost-js`). This library provides React hooks that are a **1:1 binding** of all underlying Nhost SDK functions, making it easy to use Nhost in your React applications.
-
-</div>
 
 The hooks in this library directly map to the Nhost SDK methods. For detailed API documentation, parameter types, and return values, refer to the **[Nhost SDK documentation](https://docs.nhost.io/reference/javascript/nhost-js/main)** - it shows the exact API for each function used by the hooks in this library.
 
