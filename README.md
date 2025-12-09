@@ -1,4 +1,4 @@
-# react-nhost
+<h1 align="center">react-nhost</h1>
 
 [![npm version](https://img.shields.io/npm/v/react-nhost.svg)](https://www.npmjs.com/package/react-nhost)
 [![npm downloads](https://img.shields.io/npm/dm/react-nhost.svg)](https://www.npmjs.com/package/react-nhost)
