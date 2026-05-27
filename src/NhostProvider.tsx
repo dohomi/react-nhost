@@ -20,41 +20,48 @@ export function NhostProvider({children, nhostClient}: NhostProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const lastRefreshTokenIdRef = useRef<string | null>(null);
+  const lastSessionKeyRef = useRef<string | null>(null);
 
-  const reloadSession = useCallback((currentRefreshTokenId: string | null) => {
-    if (currentRefreshTokenId !== lastRefreshTokenIdRef.current) {
-      lastRefreshTokenIdRef.current = currentRefreshTokenId;
-      // Update local authentication state to match current session
-      const currentSession = nhostClient.getUserSession();
-      setUser(currentSession?.user || null);
-      setSession(currentSession);
-      setIsAuthenticated(!!currentSession);
+  const sessionKey = (currentSession: Session | null) =>
+    currentSession
+      ? `${currentSession.refreshTokenId}:${currentSession.accessToken}`
+      : null;
+
+  const applySession = useCallback((currentSession: Session | null) => {
+    const key = sessionKey(currentSession);
+    if (key === lastSessionKeyRef.current) {
+      return;
     }
-  }, [nhostClient]);
+    lastSessionKeyRef.current = key;
+    setUser(currentSession?.user || null);
+    setSession(currentSession);
+    setIsAuthenticated(!!currentSession);
+  }, []);
 
 
-  // Initialize authentication state and set up cross-tab session synchronization
+  // Single source of truth for React state: SDK session storage changes only.
+  // Do not call applySession from refreshSession() callbacks — storage.set()
+  // already notifies subscribers when the session actually changes.
   useEffect(() => {
-    const unsubscribe = nhostClient.sessionStorage.onChange((session) => {
-      reloadSession(session?.refreshTokenId ?? null);
-    });
-    const storageEventListener = (event: StorageEvent) => {
-      if (event.key === "nhostSession") {
-        const newSession: Session | null = event.newValue
-            ? JSON.parse(event.newValue)
-            : null;
-        reloadSession(newSession?.refreshTokenId ?? null);
+    const unsubscribe = nhostClient.sessionStorage.onChange(applySession);
+
+    const onCrossTabStorage = (event: StorageEvent) => {
+      if (event.key !== "nhostSession") {
+        return;
       }
+      const newSession: Session | null = event.newValue
+          ? JSON.parse(event.newValue)
+          : null;
+      applySession(newSession);
     };
 
-    window.addEventListener("storage", storageEventListener);
+    window.addEventListener("storage", onCrossTabStorage);
 
     return () => {
       unsubscribe();
-      window.removeEventListener("storage", storageEventListener);
+      window.removeEventListener("storage", onCrossTabStorage);
     };
-  }, [reloadSession, nhostClient]);
+  }, [applySession, nhostClient]);
 
   useEffect(() => {
     async function initializeSession() {
@@ -79,39 +86,65 @@ export function NhostProvider({children, nhostClient}: NhostProviderProps) {
           removeRefreshToken();
         }
       }
-      const currentSession = nhostClient.getUserSession();
-      setUser(currentSession?.user || null);
-      setSession(currentSession);
-      setIsAuthenticated(!!currentSession);
-      lastRefreshTokenIdRef.current = currentSession?.refreshTokenId ?? null;
+      applySession(nhostClient.getUserSession());
       setIsLoading(false);
     }
 
     void initializeSession();
-  }, [nhostClient]);
+  }, [nhostClient, applySession]);
 
+  // Proactively refresh after idle/background. visibilitychange covers tab switches
+  // and minimized windows; window blur/focus covers losing OS focus while the tab
+  // stays "visible" (e.g. another app in front). Both can fire together — the
+  // in-flight guard dedupes network calls. React updates come from onChange above.
   useEffect(() => {
-    const checkSessionOnFocus = () => {
-      reloadSession(nhostClient.getUserSession()?.refreshTokenId ?? null);
+    let refreshInFlight: Promise<unknown> | null = null;
+    let wasTabHidden = false;
+    let wasWindowBlurred = false;
+
+    const refreshSessionAfterIdle = () => {
+      if (!nhostClient.getUserSession() || refreshInFlight) {
+        return;
+      }
+      refreshInFlight = nhostClient.refreshSession().finally(() => {
+        refreshInFlight = null;
+      });
     };
-    const checkVisibilityChange = () => {
-      if (!document.hidden) {
-        checkSessionOnFocus();
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        wasTabHidden = true;
+        return;
+      }
+      if (wasTabHidden) {
+        wasTabHidden = false;
+        wasWindowBlurred = false;
+        refreshSessionAfterIdle();
       }
     };
 
-    // Monitor page visibility changes (tab switching, window minimizing)
-    document.addEventListener("visibilitychange", checkVisibilityChange);
-
-    // Monitor window focus events (clicking back into the browser window)
-    window.addEventListener("focus", checkSessionOnFocus);
-
-    // Cleanup event listeners on component unmount
-    return () => {
-      document.removeEventListener("visibilitychange", checkVisibilityChange);
-      window.removeEventListener("focus", checkSessionOnFocus);
+    const onWindowBlur = () => {
+      wasWindowBlurred = true;
     };
-  }, [reloadSession, nhostClient]);
+
+    const onWindowFocus = () => {
+      if (document.hidden || !wasWindowBlurred) {
+        return;
+      }
+      wasWindowBlurred = false;
+      refreshSessionAfterIdle();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onWindowBlur);
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onWindowBlur);
+      window.removeEventListener("focus", onWindowFocus);
+    };
+  }, [nhostClient]);
 
 
   const authContext = useMemo(() => {
@@ -121,16 +154,11 @@ export function NhostProvider({children, nhostClient}: NhostProviderProps) {
       await nhostClient.auth.signOut({
         refreshToken: session.refreshToken,
       });
-      setUser(null);
-      setSession(null);
-      setIsAuthenticated(false);
+      applySession(null);
       setIsLoading(false);
     }
     const refreshSession = async () => {
-      const newSession = await nhostClient.refreshSession(0);
-      setUser(newSession?.user || null);
-      setSession(newSession);
-      setIsAuthenticated(!!newSession);
+      await nhostClient.refreshSession(0);
     }
     return {
       user,
@@ -142,7 +170,7 @@ export function NhostProvider({children, nhostClient}: NhostProviderProps) {
       signOut,
       refreshSession
     }
-  }, [user, isLoading, nhostClient,  session, isAuthenticated])
+  }, [user, isLoading, nhostClient, session, isAuthenticated, applySession])
 
   return <NhostContext.Provider value={authContext}>{children}</NhostContext.Provider>;
 }
