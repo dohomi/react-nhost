@@ -1,0 +1,12 @@
+allowBuilds:
+  esbuild: true
+  es5-ext: false
+
+packageExtensions:
+  "react-doctor@0.9.23":
+    peerDependencies:
+      eslint: "^9.0.0"
+      react: ">=17.0.1"
+  "@sentry/node@10.78.0":
+    dependencies:
+      "@opentelemetry/core": "2.12.1"

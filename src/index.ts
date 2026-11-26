@@ -1,5 +1,5 @@
 export { NhostContext } from "./NhostContext"
-export type { NhostContextProps } from "./NhostContext"
+export type { NhostContextProps, ElevationMode } from "./NhostContext"
 
 export { NhostProvider } from './NhostProvider'
 export type { NhostProviderProps } from "./NhostProvider"
@@ -10,3 +10,4 @@ export { useNhostAuthElevated } from "./hooks/useNhostAuthElevated"
 export { useNhostSecurity } from "./hooks/useNhostSecurity"
 export { useNhostStorage } from "./hooks/useNhostStorage"
 
+export { preparePKCE } from "./pkce"

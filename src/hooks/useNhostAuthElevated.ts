@@ -1,31 +1,22 @@
-import { ErrorResponse } from "@nhost/nhost-js/auth";
-import { FetchError } from "@nhost/nhost-js/fetch";
+import type { ErrorResponse } from "@nhost/nhost-js/auth";
 import { useCallback } from "react";
-import type { AuthFnName, AuthMethods, ParamsOfAuth, UseAuthHandlerOptions } from "./typeHelper";
-import { useNhostSecurity } from "./useNhostSecurity";
+import type { AuthFnName, DataOfAuth, ParamsOfAuth, UseAuthHandlerOptions } from "./typeHelper";
 import { useShared } from "./useShared";
+import { useNhostSecurity } from "./useNhostSecurity";
 
-export function useNhostAuthElevated<K extends AuthFnName>({
-                                                     fn,
-                                                     onSuccess,
-                                                     onError,
-                                                   }: UseAuthHandlerOptions<K>) {
-  const { requiresElevation, checkElevation } = useNhostSecurity();
-  const { callAsync, isLoading, isSuccess, error, nhost} = useShared({
-    onSuccess,
-    onError,
-  });
+export function useNhostAuthElevated<K extends AuthFnName>(options: UseAuthHandlerOptions<K>) {
+  const { fn } = options;
+  const { checkElevation } = useNhostSecurity(fn);
+  const { callAsync, nhost, ...state } = useShared<DataOfAuth<K>, ParamsOfAuth<K>, ErrorResponse>(options);
 
-  const caller = useCallback(
-    async (...params: ParamsOfAuth<K>) => {
-        if(requiresElevation) {
-          await checkElevation();
-        }
-        const method = nhost.auth[fn] as AuthMethods[K];
-        return callAsync((...p: any[]) => method(...p), ...params);
-    },
-    [callAsync, nhost, fn, requiresElevation, checkElevation]
-  );
+  const caller = useCallback((...params: ParamsOfAuth<K>) => {
+    // TypeScript loses the correlation between the selected key and its signature at lookup.
+    const method = nhost.auth[fn] as (...args: ParamsOfAuth<K>) => DataOfAuth<K> | Promise<DataOfAuth<K>>;
+    return callAsync(async (...args) => {
+      await checkElevation();
+      return method(...args);
+    }, ...params);
+  }, [callAsync, nhost, fn, checkElevation]);
 
-  return {callAsync: caller, isLoading, isSuccess, error: error as FetchError<ErrorResponse> | null};
+  return { callAsync: caller, ...state };
 }

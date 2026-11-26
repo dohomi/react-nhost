@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "emitDeclarationOnly": false,
+    "types": ["react", "react-dom", "vite/client"]
+  },
+  "include": ["./*.ts", "./*.tsx", "../playground/src"]
+}
