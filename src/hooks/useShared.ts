@@ -1,109 +1,48 @@
-import type { ErrorResponse as AuthErrorResponse } from "@nhost/nhost-js/auth";
+import type { NhostClient } from "@nhost/nhost-js";
 import type { FetchError } from "@nhost/nhost-js/fetch";
-import type { ErrorResponse as StorageErrorResponse } from "@nhost/nhost-js/storage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNhost } from "./useNhost";
 
-type CombinedError = FetchError<AuthErrorResponse | StorageErrorResponse>;
+// Browser and callback failures have no HTTP response.
+type LocalError = Error & { body?: undefined; status?: undefined; headers?: undefined };
+export type OperationError<E> = FetchError<E> | LocalError;
 
-type SharedSuccessPayload<R, P> = {
-  nhost: any;
-  data: R;
-  params: P;
-};
+export interface HandlerOptions<R, P, E> {
+  onSuccess?: (args: { nhost: NhostClient; data: R; params: P }) => Promise<void> | void;
+  onError?: (args: { nhost: NhostClient; error: OperationError<E>; params: P }) => Promise<void> | void;
+}
 
-type SharedErrorPayload<P> = {
-  nhost: any;
-  error: CombinedError;
-  params: P;
-};
-
-type SharedOptions<
-  OnSuccess extends ((arg: any) => any) | undefined,
-  OnError extends ((arg: any) => any) | undefined
-> = {
-  onSuccess?: OnSuccess | undefined;
-  onError?: OnError | undefined;
-};
-
-export function useShared<
-  OnSuccess extends ((arg: any) => any) | undefined,
-  OnError extends ((arg: any) => any) | undefined
->({
-  onSuccess,
-  onError,
-}: SharedOptions<OnSuccess, OnError>) {
+export function useShared<R, P extends unknown[], E>(options: HandlerOptions<R, P[0], E>) {
   const { nhost } = useNhost();
+  const callbacks = useRef(options);
+  useEffect(() => {
+    callbacks.current = options;
+  }, [options]);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const latest = useRef(0);
+  const [pending, setPending] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<CombinedError | null>(null);
+  const [error, setError] = useState<OperationError<E> | null>(null);
 
-  // Stable callback refs (must explicitly allow undefined now)
-  const onSuccessRef = useRef<OnSuccess>(onSuccess);
-  const onErrorRef = useRef<OnError>(onError);
+  const callAsync = useCallback(async (method: (...args: P) => R | Promise<R>, ...params: P): Promise<R | OperationError<E>> => {
+    const id = ++latest.current;
+    setPending(count => count + 1);
+    setIsSuccess(false);
+    setError(null);
+    try {
+      const data = await method(...params);
+      await callbacks.current.onSuccess?.({ nhost, params: params[0], data });
+      if (latest.current === id) setIsSuccess(true);
+      return data;
+    } catch (cause) {
+      const failure: OperationError<E> = cause instanceof Error ? cause : new Error(String(cause));
+      if (latest.current === id) setError(failure);
+      await callbacks.current.onError?.({ nhost, params: params[0], error: failure });
+      return failure;
+    } finally {
+      setPending(count => count - 1);
+    }
+  }, [nhost]);
 
-  useEffect(() => {
-    onSuccessRef.current = onSuccess;
-  }, [onSuccess]);
-
-  useEffect(() => {
-    onErrorRef.current = onError;
-  }, [onError]);
-
-  const callAsync = useCallback(
-    async <R, P extends any[]>(
-      cb: (...params: P) => Promise<R>,
-      ...params: P
-    ): Promise<R | CombinedError> => {
-      setIsLoading(true);
-      setError(null);
-      setIsSuccess(false);
-
-      const firstParam = params[0];
-
-      try {
-        const result = await cb(...params);
-
-        if (onSuccessRef.current) {
-          const payload: SharedSuccessPayload<R, P[0]> = {
-            nhost,
-            data: result,
-            params: firstParam,
-          };
-
-          await onSuccessRef.current(payload);
-        }
-
-        setIsSuccess(true);
-        return result;
-      } catch (e) {
-        const fetchError = e as CombinedError;
-        setError(fetchError);
-
-        if (onErrorRef.current) {
-          const payload: SharedErrorPayload<P[0]> = {
-            nhost,
-            error: fetchError,
-            params: firstParam,
-          };
-
-          await onErrorRef.current(payload);
-        }
-
-        return fetchError;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [nhost]
-  );
-
-  return {
-    nhost,
-    isLoading,
-    isSuccess,
-    error,
-    callAsync,
-  };
+  return { nhost, callAsync, isLoading: pending > 0, isSuccess, error };
 }

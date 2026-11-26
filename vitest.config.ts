@@ -6,6 +6,11 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      reporter: ['text', 'html'],
+    },
     setupFiles: './tests/setup.ts',
   },
 })

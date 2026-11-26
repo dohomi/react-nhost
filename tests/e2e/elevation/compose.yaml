@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:18.6-alpine
+  graphql:
+    ports: ["127.0.0.1:19904:8080"]
+    environment:
+      HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256","key":"${JWT_KEY}"}'
+  auth:
+    image: nhost/auth:0.53.0
+    environment:
+      AUTH_EMAIL_SIGNIN_EMAIL_VERIFIED_REQUIRED: "false"
+      AUTH_WEBAUTHN_ENABLED: "true"
+      AUTH_WEBAUTHN_RP_ID: localhost
+      AUTH_WEBAUTHN_RP_NAME: Elevation test
+      AUTH_REQUIRE_ELEVATED_CLAIM: required

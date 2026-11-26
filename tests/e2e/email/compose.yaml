@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/10-auth.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  mail:
+    image: nhost/mailhog:v1.0.1
+    ports: ["127.0.0.1:19903:8025", "127.0.0.1:19902:4000"]
+  graphql:
+    image: nhost/graphql-engine:v2.49.2-ce
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:${DB_PASS}@db:5432/postgres
+      HASURA_GRAPHQL_ADMIN_SECRET: ${GQL_ADMIN}
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/healthz"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+  auth:
+    image: nhost/auth:0.52.0
+    depends_on:
+      db: { condition: service_healthy }
+      mail: { condition: service_started }
+      graphql: { condition: service_healthy }
+    network_mode: service:mail
+    environment:
+      AUTH_HOST: 0.0.0.0
+      AUTH_PORT: "4000"
+      HASURA_GRAPHQL_ADMIN_SECRET: ${GQL_ADMIN}
+      HASURA_GRAPHQL_GRAPHQL_URL: http://graphql:8080/v1/graphql
+      AUTH_API_PREFIX: /v1
+      AUTH_SERVER_URL: http://localhost:19902/v1
+      AUTH_CLIENT_URL: http://localhost:5197
+      AUTH_ACCESS_CONTROL_ALLOWED_REDIRECT_URLS: http://localhost:5197/verify
+      AUTH_EMAIL_SIGNIN_EMAIL_VERIFIED_REQUIRED: "true"
+      AUTH_PASSWORD_HIBP_ENABLED: "false"
+      AUTH_SMTP_HOST: localhost
+      AUTH_SMTP_PORT: "1025"
+      AUTH_SMTP_SECURE: "false"
+      AUTH_SMTP_AUTH_METHOD: LOGIN
+      AUTH_SMTP_SENDER: playground@example.test
+      AUTH_ENCRYPTION_KEY: ${ENC_KEY}
+      HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256","key":"${JWT_KEY}"}'
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:${DB_PASS}@db:5432/postgres?sslmode=disable
+      POSTGRES_MIGRATIONS_CONNECTION: postgres://postgres:${DB_PASS}@db:5432/postgres?sslmode=disable

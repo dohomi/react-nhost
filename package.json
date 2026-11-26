@@ -1,7 +1,7 @@
 {
   "name": "react-nhost",
-  "version": "0.6.0",
-  "description": "Nhost React components and hooks for SDK >= v4",
+  "version": "0.7.0",
+  "description": "Nhost React components and hooks for SDK 4.6+",
   "license": "MIT",
   "homepage": "https://www.npmjs.com/package/react-nhost",
   "bugs": {
@@ -36,20 +36,27 @@
     "dev": "tsdown --watch",
     "play": "vite --config playground/vite.config.ts",
     "test": "vitest",
+    "test:e2e:email": "bash tests/e2e/email/run.sh",
+    "test:e2e:elevation": "bash tests/e2e/email/run.sh elevation",
+    "test:coverage": "vitest run --coverage",
+    "test:types": "pnpm run build && tsc -p tests/tsconfig.types.json",
     "check-types": "tsc --noEmit",
+    "doctor": "react-doctor . --yes --verbose --no-telemetry --no-supply-chain",
     "release": "bumpp && pnpm publish",
-    "prepublishOnly": "yarn run build",
+    "prepublishOnly": "pnpm run build",
     "eslint": "eslint . --fix"
   },
   "peerDependencies": {
-    "@nhost/nhost-js": ">=4 <5",
-    "@simplewebauthn/browser": ">=13 <14",
+    "@nhost/nhost-js": ">=4.6 <5",
+    "@simplewebauthn/browser": ">=13 <15",
     "react": ">=18.0.0 <20",
     "react-dom": ">=18.0.0 <20"
   },
   "devDependencies": {
-    "@nhost/nhost-js": "^4.1.0",
-    "@simplewebauthn/browser": "^13.2.2",
+    "@marsidev/react-turnstile": "^1.6.3",
+    "@nhost/nhost-js": "^4.6.0",
+    "@simplewebauthn/browser": "^14.0.0",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@tsconfig/strictest": "^2.0.7",
@@ -57,13 +64,16 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
+    "@vitest/coverage-v8": "4.0.7",
     "bumpp": "^10.3.1",
     "eslint": "9.38.0",
     "eslint-plugin-query": "0.10.0",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.0.1",
     "happy-dom": "^20.0.10",
+    "playwright-core": "1.65.1",
     "react": "^19.2.0",
+    "react-doctor": "0.9.23",
     "react-dom": "^19.2.0",
     "tsdown": "^0.16.0",
     "typescript": "^5.9.3",
@@ -71,5 +81,5 @@
     "vite": "npm:rolldown-vite@^7.1.20",
     "vitest": "^4.0.7"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "pnpm@12.23.0"
 }

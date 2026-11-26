@@ -8,8 +8,8 @@ export default defineConfig([
     ignores: [
       "node_modules",
       "dist",
-      ".yarn",
-      ".pnp*"
+      "coverage",
+      ".pnpm-store"
     ],
   },
   {
